@@ -1,24 +1,56 @@
 const resilience4js = require('resilience4js');
+const client = require('prom-client');
 const express = require('express');
-const app = express();
-const port = 3000;
-var StatsD = require('hot-shots');
 
-const client = new StatsD({port: 8125});
+const collectDefaultMetrics = client.collectDefaultMetrics;
+collectDefaultMetrics({ timeout: 5000 });
+
+const app = express();
+
+const port = 3000;
 
 console.log(resilience4js);
 
 const metrics = resilience4js.Metrics.New();
 
-const bulkhead = new resilience4js.Bulkhead('http', 10, metrics);
+const bulkhead = resilience4js.Bulkhead.New('http', 10000, metrics);
 
-const statsdSurfacer = new resilience4js.Metrics.Surfacers.StatsD(
+const prometheusSurfacer = new resilience4js.Metrics.Surfacers.Prometheus(
     metrics,
-    client
+    {
+        http_response: new client.Histogram({
+            name: 'http_response',
+            labelNames: ['status_code'],
+            help: 'metric_help'
+        }),
+        bulkhead_decorate: new client.Counter({
+            name: 'bulkhead_decorate',
+            labelNames: ['id'],
+            help: 'metric_help'
+        }),
+        bulkhead_exhausted: new client.Counter({
+            name: 'bulkhead_exhausted',
+            labelNames: ['id'],
+            help: 'metric_help'
+        }),
+        bulkhead_available_calls: new client.Gauge({
+            name: 'bulkhead_available_calls',
+            labelNames: ['id'],
+            help: 'metric_help'
+        }),
+        bulkhead_max_calls: new client.Gauge({
+            name: 'bulkhead_max_calls',
+            labelNames: ['id'],
+            help: 'metric_help'
+        }),
+        bulkhead_utilization: new client.Gauge({
+            name: 'bulkhead_utilization',
+            labelNames: ['id'],
+            help: 'metric_help'
+        }),
+    }
 );
-statsdSurfacer.surface();
-
-metrics.subscribe(console.log);
+prometheusSurfacer.surface();
 
 const get = (req, res) => {
     return new Promise((resolve, _) => {
@@ -30,15 +62,36 @@ const get = (req, res) => {
 
 const wrappedGet = bulkhead.decoratePromise(get);
 
-app.get('/', (req, res) => {
+app.get('/metrics', (req, res) => {
+    res.send(client.register.metrics());
+});
+
+app.get('/',  (req, res) => {
+    const startTime = new Date().getTime();
+    let statusCode = 200;
+
     wrappedGet(req, res)
     .then((val) => {
         res.send(val);
     })
     .catch((err) => {
-        console.log(err);
+        statusCode = 429;
         res.status(429);
         res.send({ error: err.message });
+    })
+    .finally(() => {
+        const endTime = new Date().getTime();
+        const diff = endTime - startTime;
+
+        metrics.emit({
+            event: 'response',
+            tags: {
+                status_code: statusCode,
+            },
+            type: metrics.type.HISTOGRAM,
+            value:  diff / 1000,
+            component: 'http'
+        });
     });
 });
 
