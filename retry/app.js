@@ -7,13 +7,21 @@ collectDefaultMetrics({ timeout: 5000 });
 
 const app = express();
 
-const port = 3333;
+const port = 3000;
 
 console.log(resilience4js);
 
 const metrics = resilience4js.Metrics.New();
 
-const bulkhead = resilience4js.Bulkhead.New('http', 10000, metrics);
+const retry = resilience4js.Retry.New(
+    'dummy_service',
+    resilience4js.Retry.Strategies.UntilLimit.New(
+        resilience4js.Retry.Timing.FixedInterval.New(50),
+        3,
+        metrics,
+    ),
+    metrics,
+);
 
 const prometheusSurfacer = new resilience4js.Metrics.Surfacers.Prometheus(
     metrics,
@@ -23,29 +31,19 @@ const prometheusSurfacer = new resilience4js.Metrics.Surfacers.Prometheus(
             labelNames: ['status_code'],
             help: 'metric_help'
         }),
-        bulkhead_decorate: new client.Counter({
-            name: 'bulkhead_decorate',
-            labelNames: ['id'],
+        retry_shouldretry: new client.Counter({
+            name: 'retry_shouldretry',
+            labelNames: ['strategy', 'doretry'],
             help: 'metric_help'
         }),
-        bulkhead_exhausted: new client.Counter({
-            name: 'bulkhead_exhausted',
-            labelNames: ['id'],
+        retry_call_num: new client.Gauge({
+            name: 'retry_call_num',
+            labelNames: ['strategy'],
             help: 'metric_help'
         }),
-        bulkhead_available_calls: new client.Gauge({
-            name: 'bulkhead_available_calls',
-            labelNames: ['id'],
-            help: 'metric_help'
-        }),
-        bulkhead_max_calls: new client.Gauge({
-            name: 'bulkhead_max_calls',
-            labelNames: ['id'],
-            help: 'metric_help'
-        }),
-        bulkhead_utilization: new client.Gauge({
-            name: 'bulkhead_utilization',
-            labelNames: ['id'],
+        retry_attempt: new client.Histogram({
+            name: 'retry_attempt',
+            labelNames: ['strategy'],
             help: 'metric_help'
         }),
     }
@@ -70,12 +68,18 @@ class DummyService {
 
 const get = (req, res) => {
     const service = new DummyService();
-    return new Promise((resolve, _) => {
-        resolve(service.get());
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            try {
+                resolve(service.get());
+            } catch (e) {
+                reject(e);
+            }
+        }, 50);
     });
 };
 
-const wrappedGet = bulkhead.decoratePromise(get);
+const {fn: wrappedGet} = retry.decoratePromise(get);
 
 app.get('/metrics', (req, res) => {
     res.send(client.register.metrics());
@@ -90,9 +94,13 @@ app.get('/',  (req, res) => {
             res.send(val);
         })
         .catch((err) => {
-            statusCode = 429;
-            res.status(429);
-            res.send({ error: err.message });
+            if (err.message === 'failed') {
+                statusCode = 503;
+                res.status(statusCode);
+                res.send({ error: err.message });
+            } else {
+                throw err;
+            }
         })
         .finally(() => {
             const endTime = new Date().getTime();
