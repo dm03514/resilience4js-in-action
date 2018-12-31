@@ -7,7 +7,7 @@ collectDefaultMetrics({ timeout: 5000 });
 
 const app = express();
 
-const port = 3000;
+const port = 3333;
 
 console.log(resilience4js);
 
@@ -52,11 +52,26 @@ const prometheusSurfacer = new resilience4js.Metrics.Surfacers.Prometheus(
 );
 prometheusSurfacer.surface();
 
+
+function getRandomInt(max) {
+    return Math.floor(Math.random() * Math.floor(max));
+}
+
+class DummyService {
+    get() {
+        // 99 / 100 times return a good response
+        const num = getRandomInt(100);
+        if (num === 0) {
+            throw new Error('failed');
+        }
+        return 'success;'
+    }
+}
+
 const get = (req, res) => {
+    const service = new DummyService();
     return new Promise((resolve, _) => {
-        setTimeout(() => {
-            resolve('hi');
-        }, 500);
+        resolve(service.get());
     });
 };
 
@@ -71,28 +86,28 @@ app.get('/',  (req, res) => {
     let statusCode = 200;
 
     wrappedGet(req, res)
-    .then((val) => {
-        res.send(val);
-    })
-    .catch((err) => {
-        statusCode = 429;
-        res.status(429);
-        res.send({ error: err.message });
-    })
-    .finally(() => {
-        const endTime = new Date().getTime();
-        const diff = endTime - startTime;
+        .then((val) => {
+            res.send(val);
+        })
+        .catch((err) => {
+            statusCode = 429;
+            res.status(429);
+            res.send({ error: err.message });
+        })
+        .finally(() => {
+            const endTime = new Date().getTime();
+            const diff = endTime - startTime;
 
-        metrics.emit({
-            event: 'response',
-            tags: {
-                status_code: statusCode,
-            },
-            type: metrics.type.HISTOGRAM,
-            value:  diff / 1000,
-            component: 'http'
+            metrics.emit({
+                event: 'response',
+                tags: {
+                    status_code: statusCode,
+                },
+                type: metrics.type.HISTOGRAM,
+                value:  diff / 1000,
+                component: 'http'
+            });
         });
-    });
 });
 
 app.listen(port, () => {

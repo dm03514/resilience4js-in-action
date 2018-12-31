@@ -1,0 +1,25 @@
+{
+  "name": "resilience4js-in-action",
+  "version": "1.0.0",
+  "description": "",
+  "main": "bulkhead/app.js",
+  "dependencies": {
+    "express": "^4.16.4",
+    "prom-client": "^11.2.1",
+    "resilience4js": "file:../resilience4js"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dm03514/resilience4js-in-action.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dm03514/resilience4js-in-action/issues"
+  },
+  "homepage": "https://github.com/dm03514/resilience4js-in-action#readme"
+}
