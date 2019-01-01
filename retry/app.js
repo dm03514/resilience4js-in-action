@@ -17,7 +17,7 @@ const retry = resilience4js.Retry.New(
     'dummy_service',
     resilience4js.Retry.Strategies.UntilLimit.New(
         resilience4js.Retry.Timing.FixedInterval.New(50),
-        3,
+        1,
         metrics,
     ),
     metrics,
@@ -36,14 +36,9 @@ const prometheusSurfacer = new resilience4js.Metrics.Surfacers.Prometheus(
             labelNames: ['strategy', 'doretry'],
             help: 'metric_help'
         }),
-        retry_call_num: new client.Gauge({
-            name: 'retry_call_num',
-            labelNames: ['strategy'],
-            help: 'metric_help'
-        }),
-        retry_attempt: new client.Histogram({
+        retry_attempt: new client.Counter({
             name: 'retry_attempt',
-            labelNames: ['strategy'],
+            labelNames: ['strategy', 'number'],
             help: 'metric_help'
         }),
     }
