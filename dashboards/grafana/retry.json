@@ -395,21 +395,28 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "histogram_quantile(1, sum(rate(http_response_bucket[1m])) by (le))",
+          "expr": "histogram_quantile(1, sum(rate(http_response_bucket[5m])) by (le))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "p100 - {{ status_code }}",
           "refId": "C"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(http_response_bucket[1m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(http_response_bucket[5m])) by (le))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "p99 - {{ status_code }}",
           "refId": "A"
         },
         {
-          "expr": "histogram_quantile(0.50, sum(rate(http_response_bucket[1m])) by (le))",
+          "expr": "histogram_quantile(0.90, sum(rate(http_response_bucket[5m])) by (le))",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "p90 - {{ status_code }}",
+          "refId": "D"
+        },
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_response_bucket[5m])) by (le))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "p50 - {{ status_code }} ",
@@ -497,5 +504,5 @@
   "timezone": "",
   "title": "Retry",
   "uid": "dmKS7ayiz",
-  "version": 1
+  "version": 2
 }

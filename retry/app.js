@@ -52,29 +52,26 @@ function getRandomInt(max) {
 
 class DummyService {
     get() {
-        // 99 / 100 times return a good response
-        const num = getRandomInt(100);
-        if (num === 0) {
-            throw new Error('failed');
-        }
-        return 'success;'
+        return new Promise((resolve, reject) => {
+            // 99 / 100 times return a good response
+            const num = getRandomInt(100);
+            if (num === 0) {
+                reject(new Error('failed'));
+            }
+            resolve('success');
+        });
     }
 }
 
 const get = (req, res) => {
     const service = new DummyService();
+    const wrappedGet = retry.decoratePromise(service.get);
     return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            try {
-                resolve(service.get());
-            } catch (e) {
-                reject(e);
-            }
-        }, 50);
-    });
+        setTimeout(resolve, 50);
+    }).then(() => {
+        return wrappedGet();
+    })
 };
-
-const {fn: wrappedGet} = retry.decoratePromise(get);
 
 app.get('/metrics', (req, res) => {
     res.send(client.register.metrics());
@@ -84,7 +81,7 @@ app.get('/',  (req, res) => {
     const startTime = new Date().getTime();
     let statusCode = 200;
 
-    wrappedGet(req, res)
+    get(req, res)
         .then((val) => {
             res.send(val);
         })
