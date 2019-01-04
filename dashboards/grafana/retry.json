@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 4,
+  "id": 1,
   "links": [],
   "panels": [
     {
@@ -30,6 +30,174 @@
         "w": 12,
         "x": 0,
         "y": 0
+      },
+      "id": 12,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "irate(retry_attempt[5m])",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "#{{ number }} - {{ strategy }} - {{ instance }}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Retry Attempt Rate",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "Prom",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 10,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "irate(retry_shouldretry[5m])",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{ doretry }} - {{ strategy }} - {{ instance }}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Retry Decision Rate - Should Retry?",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "Prom",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 9
       },
       "id": 2,
       "legend": {
@@ -114,7 +282,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 0
+        "y": 9
       },
       "id": 8,
       "legend": {
@@ -140,7 +308,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(http_response_count{status_code=~\"2..\"}[10m])) / sum(rate(http_response_count[10m]))",
+          "expr": "sum(rate(http_response_count{status_code=~\"2..\"}[5m])) / sum(rate(http_response_count[5m]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "availability",
@@ -167,7 +335,7 @@
       },
       "yaxes": [
         {
-          "decimals": 3,
+          "decimals": 2,
           "format": "percentunit",
           "label": null,
           "logBase": 1,
@@ -200,7 +368,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 18
       },
       "id": 6,
       "legend": {
@@ -227,21 +395,28 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "histogram_quantile(1, sum(rate(http_response_bucket[1m])) by (le))",
+          "expr": "histogram_quantile(1, sum(rate(http_response_bucket[5m])) by (le))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "p100 - {{ status_code }}",
           "refId": "C"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(http_response_bucket[1m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(http_response_bucket[5m])) by (le))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "p99 - {{ status_code }}",
           "refId": "A"
         },
         {
-          "expr": "histogram_quantile(0.50, sum(rate(http_response_bucket[1m])) by (le))",
+          "expr": "histogram_quantile(0.90, sum(rate(http_response_bucket[5m])) by (le))",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "p90 - {{ status_code }}",
+          "refId": "D"
+        },
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_response_bucket[5m])) by (le))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "p50 - {{ status_code }} ",
@@ -298,7 +473,7 @@
     "list": []
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-5m",
     "to": "now"
   },
   "timepicker": {
@@ -329,5 +504,5 @@
   "timezone": "",
   "title": "Retry",
   "uid": "dmKS7ayiz",
-  "version": 1
+  "version": 2
 }
